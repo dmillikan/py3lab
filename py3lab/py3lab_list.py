@@ -131,10 +131,10 @@ def list_snapshots(project,wait):
         print("\n \n ")
     return
 #######################################################################################################
-@instances.command('create_snapshot')
+@instances.command('create_snapshots')
 @click.option('--project', default=None, help ='Only instances of a given project')
 @click.option('--wait', default=False, help ='Wait for action to complete')
-def create_snapshot(project,wait):
+def create_snapshots(project,wait):
     "Create EC2 Snapshot"
     instance=[]
     instances = filter_instances(project)
