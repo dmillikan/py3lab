@@ -154,7 +154,7 @@ def create_snapshots(project,wait):
 @instances.command('delete_snapshots')
 @click.option('--project', default=None, help ='Only instances of a given project')
 @click.option('--wait', default=False, help ='Wait for action to complete')
-@click.option('--keep', default=0, help ='Number of Snapshots to Keep for Each Volume')
+@click.option('--keep', default=1, help ='Number of Snapshots to Keep for Each Volume')
 def delete_snapshots(project,wait,keep):
     "Delete EC2 Snapshot"
     instance=[]
