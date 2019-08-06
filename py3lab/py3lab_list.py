@@ -18,7 +18,7 @@ def filter_instances(project):
 def toggle_instance(project,reqState,wait):
     instance=[]
     instances = filter_instances(project)
-    if wait.lower() == 'true':
+    if str(wait).lower() == 'true':
         wait = True
     else:
         wait = False
@@ -95,24 +95,88 @@ def start_instances(project,wait):
     toggle_instance(project,'start',wait)
     return
 #######################################################################################################
+@instances.command('list_volumes')
+@click.option('--project', default=None, help ='Only instances of a given project')
+@click.option('--wait', default=False, help ='Wait for action to complete')
+def list_volumes(project,wait):
+    "List EC2 Volumes"
+    instance=[]
+    instances = filter_instances(project)
 
-
+    for i in instances:
+        print("Instance {0} has the following volumes attached".format(i.id))
+        print("---------------------------------------------------------------------")
+        print("Volume ID \t \t \t \t \t \t \t Size")
+        for v in i.volumes.all():
+            print("{0} \t \t \t \t \t \t {1} GB ".format(v.id,v.size))
+        print("\n \n ")
+    return
 #######################################################################################################
-@click.group()
-def snapshots():
-    """Commands for Snapshots"""
-#######################################################################################################
-@snapshots.command('start')
+@instances.command('list_snapshots')
 @click.option('--project', default=None, help ='Only instances of a given project')
 @click.option('--wait', default=False, help ='Wait for action to complete')
 def list_snapshots(project,wait):
     "List EC2 Snapshots"
-    print('Let us see if this works')
+    instance=[]
+    instances = filter_instances(project)
+
+    for i in instances:
+        print("Instance {0} has the following snapshots".format(i.id))
+        print("----------------------------------------------------------------------------------------------------------")
+        print("      Volume ID \t      Snapshot ID \t \t \t Snapshot Date \t \t \t  Status")
+        print("----------------------------------------------------------------------------------------------------------")
+        for v in i.volumes.all():
+            for s in v.snapshots.all():
+                print("{0} \t {1} \t {2} \t {3}".format(v.id,s.id,s.start_time,s.state))
+        print("\n \n ")
+    return
+#######################################################################################################
+@instances.command('create_snapshot')
+@click.option('--project', default=None, help ='Only instances of a given project')
+@click.option('--wait', default=False, help ='Wait for action to complete')
+def create_snapshot(project,wait):
+    "Create EC2 Snapshot"
+    instance=[]
+    instances = filter_instances(project)
+
+    for i in instances:
+        for v in i.volumes.all():
+            snap = v.snapshots.filter(Filters=[{'Name' : 'status' , 'Values' : ['pending']}])
+            for s1 in snap.all():
+                print('Waiting for snapshot to complete')
+                s1.wait_until_completed()
+
+            print("Making new snapshot of instance {0}".format(i.id))
+            v.create_snapshot()
+    return
+#######################################################################################################
+
+@instances.command('delete_snapshots')
+@click.option('--project', default=None, help ='Only instances of a given project')
+@click.option('--wait', default=False, help ='Wait for action to complete')
+@click.option('--keep', default=0, help ='Number of Snapshots to Keep for Each Volume')
+def delete_snapshots(project,wait,keep):
+    "Delete EC2 Snapshot"
+    instance=[]
+    instances = filter_instances(project)
+
+    for i in instances:
+        for v in i.volumes.all():
+            snap =  list(v.snapshots.filter(Filters=[{'Name' : 'status' , 'Values' : ['completed','error']}]))
+        #    for s1 in snap.all():
+        #        print(v.id + '  ' + s1.id + ' '+ str(s1.start_time))
+            if len(snap) > keep:
+                for s1 in snap[keep:]:
+                    print("Delete Snapshot {0} created on {1} from Volume {2} on Instance {3}".format(s1.id,str(s1.start_time),v.id,i.id))
+                    s1.delete()
+            else:
+                print("No Snapshots to delete for Volume {0} on Instance {1}".format(v.id,i.id))
+
+        #    print("Making new snapshot of instance {0}".format(i.id))
+
     return
 #######################################################################################################
 
 
-
 if __name__ == '__main__':
     instances()
-    
