@@ -3,6 +3,7 @@ import click
 
 session = boto3.Session(profile_name='py3lab')
 ec2 = session.resource('ec2')
+ec2client = boto3.client('ec2')
 
 #######################################################################################################
 def filter_instances(project):
@@ -153,7 +154,6 @@ def create_snapshots(project,wait):
 
 @instances.command('delete_snapshots')
 @click.option('--project', default=None, help ='Only instances of a given project')
-@click.option('--wait', default=False, help ='Wait for action to complete')
 @click.option('--keep', default=1, help ='Number of Snapshots to Keep for Each Volume')
 def delete_snapshots(project,wait,keep):
     "Delete EC2 Snapshot"
@@ -163,8 +163,6 @@ def delete_snapshots(project,wait,keep):
     for i in instances:
         for v in i.volumes.all():
             snap =  list(v.snapshots.filter(Filters=[{'Name' : 'status' , 'Values' : ['completed','error']}]))
-        #    for s1 in snap.all():
-        #        print(v.id + '  ' + s1.id + ' '+ str(s1.start_time))
             if len(snap) > keep:
                 for s1 in snap[keep:]:
                     print("Delete Snapshot {0} created on {1} from Volume {2} on Instance {3}".format(s1.id,str(s1.start_time),v.id,i.id))
@@ -177,6 +175,27 @@ def delete_snapshots(project,wait,keep):
     return
 #######################################################################################################
 
+@instances.command('delete_volume')
+@click.option('--id', default=None, help ='Number of Snapshots to Keep for Each Volume')
+def delete_volume(id):
+    "Delete EC2 Volume - Requires Volume ID"
+
+    volexists = len(list(ec2.volumes.filter(Filters=[{'Name' : 'volume-id' , 'Values' : [id]}])))
+    if volexists > 0:
+        v =  ec2.Volume(id)
+
+        if len(v.attachments) == 1:
+            vdict = dict(v.attachments[0])
+            print('Detaching volume {0} from instance {1}'.format(vdict['VolumeId'],vdict['InstanceId']))
+            v.detach_from_instance()
+            w = ec2client.get_waiter('volume_available')
+            w.wait(VolumeIds=[id])
+        print('Deleting volume {0}'.format(v.id))
+        v.delete()
+    else:
+        print('Volume {0} does not exist'.format(id))
+    return
+#######################################################################################################
 
 if __name__ == '__main__':
     instances()
