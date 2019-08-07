@@ -109,23 +109,6 @@ def start_instances(project,wait):
     toggle_instance(project,'start',wait)
     return
 #######################################################################################################
-@volumes.command('list')
-@click.option('--project', default=None, help ='Only instances of a given project')
-@click.option('--wait', default=False, help ='Wait for action to complete')
-def list_volumes(project,wait):
-    "List EC2 Volumes"
-    instance=[]
-    instances = filter_instances(project)
-
-    for i in instances:
-        print("Instance {0} has the following volumes attached".format(i.id))
-        print("---------------------------------------------------------------------")
-        print("Volume ID \t \t \t \t \t \t \t Size")
-        for v in i.volumes.all():
-            print("{0} \t \t \t \t \t \t {1} GB ".format(v.id,v.size))
-        print("\n \n ")
-    return
-#######################################################################################################
 @snapshots.command('list')
 @click.option('--project', default=None, help ='Only instances of a given project')
 @click.option('--wait', default=False, help ='Wait for action to complete')
@@ -164,7 +147,6 @@ def create_snapshots(project,wait):
             v.create_snapshot()
     return
 #######################################################################################################
-
 @snapshots.command('delete')
 @click.option('--project', default=None, help ='Only instances of a given project')
 @click.option('--keep', default=1, help ='Number of Snapshots to Keep for Each Volume')
@@ -185,6 +167,23 @@ def delete_snapshots(project,wait,keep):
 
         #    print("Making new snapshot of instance {0}".format(i.id))
 
+    return
+#######################################################################################################
+@volumes.command('list')
+@click.option('--project', default=None, help ='Only instances of a given project')
+@click.option('--wait', default=False, help ='Wait for action to complete')
+def list_volumes(project,wait):
+    "List EC2 Volumes"
+    instance=[]
+    instances = filter_instances(project)
+
+    for i in instances:
+        print("Instance {0} has the following volumes attached".format(i.id))
+        print("---------------------------------------------------------------------")
+        print("Volume ID \t \t \t \t \t \t \t Size")
+        for v in i.volumes.all():
+            print("{0} \t \t \t \t \t \t {1} GB ".format(v.id,v.size))
+        print("\n \n ")
     return
 #######################################################################################################
 @volumes.command('delete')
