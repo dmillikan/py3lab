@@ -48,8 +48,21 @@ def toggle_instance(project,reqState,wait):
 #######################################################################################################
 #######################################################################################################
 @click.group()
+def cli():
+    """py3lab manages ec2"""
+#######################################################################################################
+@cli.group("instances")
 def instances():
     """Commands for Instances"""
+#######################################################################################################
+@cli.group("volumes")
+def volumes():
+    """Commands for Volumes"""
+#######################################################################################################
+@cli.group("snapshots")
+def snapshots():
+    """Commands for Snapshots"""
+#######################################################################################################
 #######################################################################################################
 #######################################################################################################
 @instances.command('list')
@@ -96,7 +109,7 @@ def start_instances(project,wait):
     toggle_instance(project,'start',wait)
     return
 #######################################################################################################
-@instances.command('list_volumes')
+@volumes.command('list')
 @click.option('--project', default=None, help ='Only instances of a given project')
 @click.option('--wait', default=False, help ='Wait for action to complete')
 def list_volumes(project,wait):
@@ -113,7 +126,7 @@ def list_volumes(project,wait):
         print("\n \n ")
     return
 #######################################################################################################
-@instances.command('list_snapshots')
+@snapshots.command('list')
 @click.option('--project', default=None, help ='Only instances of a given project')
 @click.option('--wait', default=False, help ='Wait for action to complete')
 def list_snapshots(project,wait):
@@ -132,7 +145,7 @@ def list_snapshots(project,wait):
         print("\n \n ")
     return
 #######################################################################################################
-@instances.command('create_snapshots')
+@snapshots.command('create')
 @click.option('--project', default=None, help ='Only instances of a given project')
 @click.option('--wait', default=False, help ='Wait for action to complete')
 def create_snapshots(project,wait):
@@ -152,7 +165,7 @@ def create_snapshots(project,wait):
     return
 #######################################################################################################
 
-@instances.command('delete_snapshots')
+@snapshots.command('delete')
 @click.option('--project', default=None, help ='Only instances of a given project')
 @click.option('--keep', default=1, help ='Number of Snapshots to Keep for Each Volume')
 def delete_snapshots(project,wait,keep):
@@ -174,8 +187,7 @@ def delete_snapshots(project,wait,keep):
 
     return
 #######################################################################################################
-
-@instances.command('delete_volume')
+@volumes.command('delete')
 @click.option('--id', default=None, help ='Number of Snapshots to Keep for Each Volume')
 def delete_volume(id):
     "Delete EC2 Volume - Requires Volume ID"
@@ -198,4 +210,4 @@ def delete_volume(id):
 #######################################################################################################
 
 if __name__ == '__main__':
-    instances()
+    cli()
