@@ -1,4 +1,5 @@
 import boto3
+import botocore
 import click
 
 session = boto3.Session(profile_name='py3lab')
@@ -19,10 +20,10 @@ def filter_instances(project):
 def toggle_instance(project,reqState,wait):
     instance=[]
     instances = filter_instances(project)
-    if str(wait).lower() == 'true':
-        wait = True
-    else:
-        wait = False
+#    if str(wait).lower() == 'true':
+#        wait = True
+#    else:
+#        wait = False
 
     for i in instances:
         curState = i.state['Name']
@@ -69,8 +70,6 @@ def snapshots():
 @click.option('--project', default=None, help ='Only instances of a given project')
 def list_instances(project):
     "List EC2 Instances"
-    instance=[]
-
     instances = filter_instances(project)
     for i in instances:
         tags = { t['Key'] : t['Value'] for t in i.tags or [] }
@@ -90,12 +89,10 @@ def list_instances(project):
 
         )))
     return
-
-
 #######################################################################################################
 @instances.command('stop')
 @click.option('--project', default=None, help ='Only instances of a given project')
-@click.option('--wait', default=False, help ='Wait for action to complete')
+@click.option('--wait', 'wait', default=False, is_flag=True, help ='Wait for action to complete')
 def stop_instances(project,wait):
     "Stop EC2 Instances"
     toggle_instance(project,'stop',wait)
@@ -103,7 +100,7 @@ def stop_instances(project,wait):
 #######################################################################################################
 @instances.command('start')
 @click.option('--project', default=None, help ='Only instances of a given project')
-@click.option('--wait', default=False, help ='Wait for action to complete')
+@click.option('--wait', 'wait', default=False, is_flag=True, help ='Wait for action to complete')
 def start_instances(project,wait):
     "Start EC2 Instances"
     toggle_instance(project,'start',wait)
@@ -111,12 +108,9 @@ def start_instances(project,wait):
 #######################################################################################################
 @snapshots.command('list')
 @click.option('--project', default=None, help ='Only instances of a given project')
-@click.option('--wait', default=False, help ='Wait for action to complete')
-def list_snapshots(project,wait):
+def list_snapshots(project):
     "List EC2 Snapshots"
-    instance=[]
     instances = filter_instances(project)
-
     for i in instances:
         print("Instance {0} has the following snapshots".format(i.id))
         print("----------------------------------------------------------------------------------------------------------")
@@ -130,12 +124,9 @@ def list_snapshots(project,wait):
 #######################################################################################################
 @snapshots.command('create')
 @click.option('--project', default=None, help ='Only instances of a given project')
-@click.option('--wait', default=False, help ='Wait for action to complete')
-def create_snapshots(project,wait):
+def create_snapshots(project):
     "Create EC2 Snapshot"
-    instance=[]
     instances = filter_instances(project)
-
     for i in instances:
         for v in i.volumes.all():
             snap = v.snapshots.filter(Filters=[{'Name' : 'status' , 'Values' : ['pending']}])
@@ -152,9 +143,7 @@ def create_snapshots(project,wait):
 @click.option('--keep', default=1, help ='Number of Snapshots to Keep for Each Volume')
 def delete_snapshots(project,wait,keep):
     "Delete EC2 Snapshot"
-    instance=[]
     instances = filter_instances(project)
-
     for i in instances:
         for v in i.volumes.all():
             snap =  list(v.snapshots.filter(Filters=[{'Name' : 'status' , 'Values' : ['completed','error']}]))
@@ -171,12 +160,9 @@ def delete_snapshots(project,wait,keep):
 #######################################################################################################
 @volumes.command('list')
 @click.option('--project', default=None, help ='Only instances of a given project')
-@click.option('--wait', default=False, help ='Wait for action to complete')
 def list_volumes(project,wait):
     "List EC2 Volumes"
-    instance=[]
     instances = filter_instances(project)
-
     for i in instances:
         print("Instance {0} has the following volumes attached".format(i.id))
         print("---------------------------------------------------------------------")
@@ -190,7 +176,6 @@ def list_volumes(project,wait):
 @click.option('--id', default=None, help ='Number of Snapshots to Keep for Each Volume')
 def delete_volume(id):
     "Delete EC2 Volume - Requires Volume ID"
-
     volexists = len(list(ec2.volumes.filter(Filters=[{'Name' : 'volume-id' , 'Values' : [id]}])))
     if volexists > 0:
         v =  ec2.Volume(id)
@@ -209,4 +194,11 @@ def delete_volume(id):
 #######################################################################################################
 
 if __name__ == '__main__':
-    cli()
+    try:
+        cli()
+    except botocore.exceptions.ClientError as e:
+        print("An error occured of type {0}".format(e))#
+    except TypeError as e:
+        print("An error occured of type {0}".format(e))
+#    except:
+#        print("An error occured")
